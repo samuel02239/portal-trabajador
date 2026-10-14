@@ -181,7 +181,7 @@ alter table public.ia_logs add column if not exists llave text;   -- últimos ca
 create table if not exists public.planes (
   id text primary key,                     -- 'gratis' | 'normal' | 'pro'
   nombre text not null,
-  precio_cop integer not null,             -- 0, 10000, 50000 (pesos colombianos)
+  precio_cop integer not null,             -- 0, 15000, 50000 (pesos colombianos)
   informes_limite integer,                 -- null = ilimitados
   periodo_limite text not null check (periodo_limite in ('total','mensual')),
   dias_vigencia integer,                   -- null en el plan gratis; 30 en los de pago
@@ -190,7 +190,7 @@ create table if not exists public.planes (
 
 insert into public.planes (id, nombre, precio_cop, informes_limite, periodo_limite, dias_vigencia) values
   ('gratis', 'Gratis (prueba)', 0,     2,    'total',   null),
-  ('normal', 'Normal',          10000, 2,    'mensual', 30),
+  ('normal', 'Normal',          15000, 2,    'mensual', 30),
   ('pro',    'Pro',             50000, null, 'mensual', 30)
 on conflict (id) do update set
   nombre = excluded.nombre, precio_cop = excluded.precio_cop,
