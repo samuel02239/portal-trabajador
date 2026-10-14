@@ -1,0 +1,41 @@
+# Render Blueprint: crea el servidor del backend desde este repositorio. Ver DESPLIEGUE.md.
+# Las variables con "sync: false" NO tienen valor aquí: Render las pide al crear el servicio y quedan
+# guardadas solo en el panel de Render (nunca en GitHub).
+services:
+  - type: web
+    name: portal-trabajador-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    region: oregon            # la misma región de la base de datos de Supabase (us-west-2): respuestas más rápidas
+    # Pruebas: "free" (gratis). Se apaga tras 15 min sin uso y tarda ~1 min en despertar; el PDF sale más lento.
+    # Para usuarios reales cámbialo a "starter" (de pago, siempre encendido) y sube el cambio a GitHub.
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: OPENROUTER_API_KEYS
+        sync: false
+      - key: WOMPI_PUBLIC_KEY
+        sync: false
+      - key: WOMPI_PRIVATE_KEY
+        sync: false
+      - key: WOMPI_EVENTS_SECRET
+        sync: false
+      - key: WOMPI_INTEGRITY_SECRET
+        sync: false
+      - key: WOMPI_ENV
+        value: sandbox        # cámbialo a production cuando pongas las llaves de producción
+      - key: WOMPI_REDIRECT_URL
+        sync: false
+      - key: VERSION_MINIMA_ESCRITORIO
+        value: "1.1.0"
+      - key: URL_DESCARGA_ESCRITORIO
+        sync: false
+      - key: WEB_CONCURRENCY
+        value: "1"            # procesos del servidor; con un plan de 2 GB o más puedes poner 2

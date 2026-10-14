@@ -1,0 +1,6 @@
+-r requirements.txt
+# Pruebas
+pytest>=8
+respx>=0.21
+# Solo para aplicar supabase/schema.sql desde scripts/aplicar_schema.py
+psycopg[binary]>=3.2

@@ -1,0 +1,22 @@
+# Secretos: nunca al repositorio
+.env
+*.env
+.env.*
+!.env.example
+!escritorio/.env
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+# Empaquetado
+empaquetado/dist/
+empaquetado/build/
+empaquetado/salida/
+# Varios
+*.log
+backend/scripts/ultimo_informe_prueba.pdf
+# Documentos reales (minutas, informes) con datos personales
+*.pdf
+!backend/plantillas_base/*.pdf

@@ -1,0 +1,15 @@
+# Finales de línea: el servidor (Linux) necesita LF; los .bat de Windows, CRLF
+* text=auto
+Dockerfile text eol=lf
+*.sh text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.bat text eol=crlf
+*.iss text eol=crlf
+# Archivos binarios: sin conversión
+*.docx binary
+*.pdf binary
+*.png binary
+*.ico binary
+*.ttf binary
+*.otf binary

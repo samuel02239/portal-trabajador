@@ -1,0 +1,17 @@
+{
+  "_nota": "Todo va por OpenRouter. Se prueban de arriba hacia abajo; si uno falla, pasa al siguiente. Verifica los nombres en https://openrouter.ai/models. enabled:false lo desactiva. max_tokens_extra da margen a modelos que razonan (el razonamiento gasta tokens de salida). La llave va en backend/.env (OPENROUTER_API_KEY).",
+  "providers": [
+    {
+      "name": "DeepSeek V4.1 Flash",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "reasoning": {"enabled": false},
+      "max_tokens_extra": 500
+    },
+    {
+      "name": "GPT Luna",
+      "model": "~openai/gpt-luna-latest",
+      "reasoning": {"enabled": false},
+      "max_tokens_extra": 500
+    }
+  ]
+}

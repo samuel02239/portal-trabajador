@@ -1,0 +1,11 @@
+# Nunca dentro de la imagen: las llaves van como variables de entorno del servicio
+.env
+*.env
+.env.*
+__pycache__/
+*.pyc
+.pytest_cache/
+tests/
+scripts/
+iniciar_backend.bat
+*.log
