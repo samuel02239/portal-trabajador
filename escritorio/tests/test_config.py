@@ -62,6 +62,21 @@ def test_no_insiste_con_errores_que_no_son_de_conexion(qapp, monkeypatch):
     assert api.llamadas == 1
 
 
+def test_pantalla_de_carga_explica_la_espera(qapp, monkeypatch):
+    from app.ventanas import principal
+    monkeypatch.setattr(config, "MODO_BACKEND", "remoto")
+    pagina = principal.PaginaCargando()
+    pagina.empezar("Conectando con el servidor…")
+    assert pagina._reloj.isActive() and pagina.detalle.isHidden()
+    pagina._inicio -= 20  # como si llevara 20 s esperando
+    pagina._tic()
+    assert not pagina.detalle.isHidden() and "(20 s)" in pagina.detalle.text()
+    assert pagina.indicador.texto.text() == "Conectando con el servidor…"
+    monkeypatch.setattr(config, "MODO_BACKEND", "integrado")
+    pagina.empezar("Encendiendo el programa…")
+    assert pagina.detalle.isHidden()
+
+
 def test_version_antigua_avisa_con_enlace(qapp, monkeypatch):
     from app.servicios.errores import ErrorApp
     from app.ventanas.principal import VentanaPrincipal

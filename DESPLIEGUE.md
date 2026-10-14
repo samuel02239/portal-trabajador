@@ -111,18 +111,19 @@ pausada: revisa su saldo en OpenRouter. En la tabla `ia_logs` de Supabase, la co
 
 ## Paso 3. Conectar el programa al servidor y probar
 
-Usa la dirección exacta del paso 2 en estas dos líneas:
+`escritorio/.env` ya apunta al servidor (`MODO_BACKEND=remoto`,
+`API_BASE_URL=https://portal-trabajador-api.onrender.com`), así que:
 
-```
-MODO_BACKEND=remoto
-API_BASE_URL=https://portal-trabajador-api.onrender.com
-```
+- **`empaquetado\construir.bat`** crea `salida\PortalTrabajador-Instalador-1.1.0.exe`, que se conecta a Render. Es
+  el que se reparte. Al abrir, si el servidor estaba apagado (plan gratis), muestra "Conectando con el servidor…"
+  con un contador y espera hasta 2,5 minutos; mientras el programa está abierto avisa al servidor cada 10 minutos
+  para que no se apague.
+- **`empaquetado\construir_personal.bat`** crea la versión con el servidor dentro (sin internet hacia Render),
+  solo para pruebas en este PC. Se fuerza sola a modo integrado.
+- **Desde el código** (`iniciar_todo.bat`) usa lo que diga `escritorio/.env`.
 
-- **Programa instalado** (`PortalTrabajador-Personal`): crea un archivo llamado `.env` con esas dos líneas en la
-  carpeta del programa (`%LOCALAPPDATA%\Programs\PortalTrabajador`, junto a `PortalTrabajador.exe`). Al abrirlo usa
-  el servidor. Para volver al servidor interno, borra ese `.env`.
-- **Desde el código** (`iniciar_todo.bat`): cambia esas dos líneas en `escritorio/.env`. Para volver, pon
-  `MODO_BACKEND=integrado` y `API_BASE_URL=http://127.0.0.1:8000`.
+Si cambias la dirección del servidor, no hace falta reinstalar: pon un archivo `.env` junto a
+`PortalTrabajador.exe` con `API_BASE_URL=https://nueva-direccion`.
 
 Prueba todo: iniciar sesión, cargar la minuta, registrar actividades con fotos, generar el informe y descargar
 Word y PDF. Los datos son los mismos en los dos modos (es la misma base de datos de Supabase).

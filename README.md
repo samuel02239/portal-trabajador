@@ -84,13 +84,13 @@ Prueba automática: `python scripts/prueba_sin_limite.py` (con el backend encend
 
 **Lo más fácil:** doble clic en `iniciar_todo.bat` (en la carpeta `portal-trabajador`).
 
-Con `MODO_BACKEND=integrado` (en `escritorio/.env`, así viene) el programa **enciende el backend por dentro** al
-abrirse y lo apaga al cerrarse: no hay ventana negra ni nada que encender aparte. El servidor interno solo
-escucha en `127.0.0.1` (nadie más en la red puede conectarse) y usa las llaves de `backend/.env`. Si el puerto
-8000 está ocupado, usa otro libre.
+Con `MODO_BACKEND=remoto` (en `escritorio/.env`, así viene) el programa usa el servidor de Render
+(`API_BASE_URL=https://portal-trabajador-api.onrender.com`). Si el servidor estaba apagado (plan gratis), la
+pantalla de carga lo explica y espera; mientras el programa está abierto lo mantiene encendido.
 
-Con `MODO_BACKEND=remoto` el programa usa el servidor de `API_BASE_URL` (un servidor propio o en la nube) y
-el backend se enciende aparte con `backend/iniciar_backend.bat`.
+Con `MODO_BACKEND=integrado` y `API_BASE_URL=http://127.0.0.1:8000` el programa **enciende el backend por
+dentro** al abrirse y lo apaga al cerrarse (solo pruebas en este PC). El servidor interno solo escucha en
+`127.0.0.1` y usa las llaves de `backend/.env`. Si el puerto 8000 está ocupado, usa otro libre.
 
 Requiere Python 3.11 o superior.
 

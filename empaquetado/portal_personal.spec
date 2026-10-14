@@ -51,9 +51,20 @@ for paquete in ("uvicorn", "fastapi", "starlette", "pydantic", "pdfplumber", "pd
                 "pypdfium2_raw", "docx", "python_multipart", "multipart", "anyio", "h11", "httptools", "websockets"):
     hidden += collect_submodules(paquete)
 
+def env_integrado() -> str:
+    """Copia de escritorio/.env (solo valores públicos) forzada a modo integrado, sin importar cómo esté el original."""
+    lineas = [l for l in (ESCRITORIO / ".env").read_text(encoding="utf-8").splitlines()
+              if not l.startswith(("MODO_BACKEND=", "API_BASE_URL="))]
+    lineas += ["MODO_BACKEND=integrado", "API_BASE_URL=http://127.0.0.1:8000"]
+    carpeta = Path(workpath) / "env_personal"
+    carpeta.mkdir(parents=True, exist_ok=True)
+    (carpeta / ".env").write_text("\n".join(lineas) + "\n", encoding="utf-8")
+    return str(carpeta / ".env")
+
+
 datas = [
     (str(ESCRITORIO / "recursos"), "recursos"),
-    (str(ESCRITORIO / ".env"), "."),          # solo valores públicos; debe decir MODO_BACKEND=integrado
+    (env_integrado(), "."),
 ]
 datas += archivos_backend()
 datas += collect_data_files("qtawesome")

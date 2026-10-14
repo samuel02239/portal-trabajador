@@ -12,6 +12,9 @@ services:
     # Para usuarios reales cámbialo a "starter" (de pago, siempre encendido) y sube el cambio a GitHub.
     plan: free
     healthCheckPath: /api/health
+    buildFilter:              # solo se reconstruye cuando cambia el backend (no por cambios del programa de escritorio)
+      paths:
+        - backend/**
     envVars:
       - key: SUPABASE_URL
         sync: false

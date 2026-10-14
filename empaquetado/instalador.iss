@@ -6,7 +6,7 @@
   #define Dist "dist\PortalTrabajador"
 #endif
 #define Nombre "Portal del Trabajador"
-#define Version "1.0.0"
+#define Version "1.1.0"
 #define Editor "Portal del Trabajador"
 #define Exe "PortalTrabajador.exe"
 
@@ -30,6 +30,8 @@ WizardStyle=modern
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
+; Cierra el programa si está abierto antes de actualizarlo
+CloseApplications=yes
 ; Firma digital (recomendado para evitar la alerta de SmartScreen). Configura la herramienta "firmar"
 ; en Inno Setup (Tools > Configure Sign Tools) con tu certificado de firma de código y descomenta:
 ; SignTool=firmar
@@ -40,6 +42,10 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 
 [Tasks]
 Name: "escritorio"; Description: "Crear un acceso directo en el escritorio"; GroupDescription: "Accesos directos:"
+
+[InstallDelete]
+; Quita los archivos de la versión anterior (incluido el backend de la versión personal) antes de copiar los nuevos
+Type: filesandordirs; Name: "{app}\_internal"
 
 [Files]
 Source: "{#Dist}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs

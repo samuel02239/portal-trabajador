@@ -22,8 +22,10 @@ from app.widgets.carga import Indicador
 from app.widgets.medidor_cupo import MedidorCupo
 
 log = logging.getLogger("portal.ventana")
-# Un servidor en la nube que estaba dormido (plan gratis) o actualizándose tarda hasta un minuto en responder
-ESPERA_SERVIDOR = 75
+# Un servidor en la nube que estaba apagado (plan gratis) o actualizándose tarda hasta un minuto en responder
+ESPERA_SERVIDOR = 150
+AVISO_ESPERA = 6                 # segundos sin respuesta antes de explicar por qué tarda
+MANTENER_DESPIERTO_MS = 10 * 60 * 1000  # el plan gratis apaga el servidor tras 15 min sin uso
 
 SECCIONES = [
     ("inicio", "Inicio", "fa6s.house"),
@@ -73,18 +75,53 @@ class EtiquetaElidida(QLabel):
 
 
 class PaginaCargando(QWidget):
+    """Pantalla de espera. Si el servidor de la nube tarda (estaba apagado), explica por qué y cuenta los segundos."""
+
     def __init__(self):
         super().__init__()
         self.setObjectName("fondo")
         capa = QVBoxLayout(self)
         capa.setAlignment(Qt.AlignCenter)
+        capa.setSpacing(10)
         marca = QLabel(config.APP_NOMBRE)
         marca.setProperty("rol", "titulo")
         marca.setAlignment(Qt.AlignCenter)
         self.indicador = Indicador("Abriendo tu sesión…")
         self.indicador.show()
+        self.detalle = QLabel()
+        self.detalle.setProperty("rol", "secundario")
+        self.detalle.setAlignment(Qt.AlignCenter)
+        self.detalle.setWordWrap(True)
+        self.detalle.setFixedWidth(440)
+        self.detalle.hide()
         capa.addWidget(marca)
         capa.addWidget(self.indicador, 0, Qt.AlignCenter)
+        capa.addWidget(self.detalle, 0, Qt.AlignCenter)
+        self._inicio = time.monotonic()
+        self._reloj = QTimer(self)
+        self._reloj.setInterval(1000)
+        self._reloj.timeout.connect(self._tic)
+
+    def empezar(self, texto: str) -> None:
+        self.indicador.mostrar(texto)
+        self.detalle.hide()
+        self._inicio = time.monotonic()
+        if config.MODO_BACKEND == "remoto":
+            self._reloj.start()
+        else:
+            self._reloj.stop()
+
+    def _tic(self) -> None:
+        segundos = int(time.monotonic() - self._inicio)
+        if segundos < AVISO_ESPERA:
+            return
+        self.detalle.setText("Si el servidor estaba apagado por falta de uso, tarda hasta un minuto en encender. "
+                             f"No cierres el programa. ({segundos} s)")
+        self.detalle.show()
+
+    def hideEvent(self, evento) -> None:
+        self._reloj.stop()
+        super().hideEvent(evento)
 
 
 class VentanaPrincipal(QMainWindow):
@@ -116,7 +153,16 @@ class VentanaPrincipal(QMainWindow):
         QShortcut(QKeySequence("Ctrl+G"), self, activated=lambda: self._atajo("generar"))
         self.e.suscripcion_cambiada.connect(lambda: self.medidor.poner(self.e.suscripcion))
         self.e.perfil_cambiado.connect(self._pintar_usuario)
+        if config.MODO_BACKEND == "remoto":  # mientras el programa está abierto, el servidor no se apaga
+            self._despertador = QTimer(self)
+            self._despertador.setInterval(MANTENER_DESPIERTO_MS)
+            self._despertador.timeout.connect(self._mantener_despierto)
+            self._despertador.start()
         QTimer.singleShot(0, self.arrancar)
+
+    def _mantener_despierto(self) -> None:
+        ejecutar(self.e.api.health, al_error=lambda err: log.info("Aviso al servidor sin respuesta: %s", err),
+                 contexto=self)
 
     # ------------------------------------------------------------ armado
     def _crear_lateral(self) -> QFrame:
@@ -310,9 +356,8 @@ class VentanaPrincipal(QMainWindow):
         if problema:
             self.mostrar_login(problema, "error")
             return
-        self.pag_cargando.indicador.mostrar(
-            "Encendiendo el programa…" if config.MODO_BACKEND == "integrado"
-            else "Conectando con el servidor… Si estuvo inactivo, puede tardar hasta un minuto.")
+        self.pag_cargando.empezar("Encendiendo el programa…" if config.MODO_BACKEND == "integrado"
+                                  else "Conectando con el servidor…")
         ejecutar(self._restaurar, al_ok=self._despues_de_restaurar, al_error=self._error_al_arrancar, contexto=self)
 
     def _restaurar(self):
@@ -380,7 +425,14 @@ class VentanaPrincipal(QMainWindow):
         """Después de iniciar sesión o registrarse."""
         self.e.iniciar_sesion(sesion)
         self.pila.setCurrentWidget(self.pag_cargando)
-        ejecutar(self._cargar_usuario, al_ok=self.entrar, al_error=self._error_al_entrar, contexto=self)
+        self.pag_cargando.empezar("Abriendo tu sesión…")
+        ejecutar(self._cargar_tras_iniciar, al_ok=self.entrar, al_error=self._error_al_entrar, contexto=self)
+
+    def _cargar_tras_iniciar(self) -> dict:
+        """Si el servidor de la nube se apagó mientras la persona escribía su clave, se espera a que encienda."""
+        if config.MODO_BACKEND == "remoto":
+            self._salud(self.e.api)
+        return self._cargar_usuario()
 
     def _error_al_entrar(self, err) -> None:
         self.mostrar_login(str(err), "error")
