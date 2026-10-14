@@ -284,7 +284,8 @@ class VentanaActividad(QWidget):
         ev = QLabel("Evidencias (opcional): fotos, actas, listados…")
         ev.setProperty("rol", "seccion")
         ayuda_ev = QLabel("Se guarda una copia en tu carpeta de evidencias, se adjunta como anexo con una descripción "
-                          "acorde a la actividad y las fotos se pegan al final del informe.")
+                          "acorde a la actividad. Las fotos y también los PDF, Word y Excel se pegan al final del informe como "
+                          "capturas de pantalla de cada hoja: no necesitas convertirlos en imagen.")
         ayuda_ev.setProperty("rol", "secundario")
         ayuda_ev.setWordWrap(True)
         self.lista_ev = QListWidget()

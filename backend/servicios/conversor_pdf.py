@@ -74,14 +74,19 @@ def motor() -> str | None:
     return None
 
 
-def convertir(docx: bytes, timeout: int = 180) -> bytes | None:
-    """Devuelve el PDF o None si no hay con qué convertir o la conversión falla."""
+def convertir(docx: bytes, timeout: int = 180, extension: str = "docx") -> bytes | None:
+    """Devuelve el PDF o None si no hay con qué convertir o la conversión falla.
+
+    extension: 'docx' (informe y evidencias Word) o 'xlsx' (evidencias de Excel; solo con LibreOffice).
+    """
     eleccion = motor()
+    if eleccion == "word" and extension != "docx":
+        eleccion = None
     if not eleccion:
         log.warning("No hay LibreOffice ni Word para convertir a PDF.")
         return None
     with _LOCK, tempfile.TemporaryDirectory(prefix="portal_pdf_") as carpeta:
-        entrada = Path(carpeta) / "informe.docx"
+        entrada = Path(carpeta) / f"informe.{extension}"
         salida = Path(carpeta) / "informe.pdf"
         entrada.write_bytes(docx)
         try:

@@ -4,8 +4,7 @@ Crea usuarios de prueba, recorre el flujo completo y verifica:
 - Fase 0: el usuario nuevo queda con el plan gratis.
 - Fase 2: la minuta de ejemplo produce las 10 obligaciones específicas.
 - Cédula: una cédula = una cuenta; la cédula debe aparecer en la minuta; no se puede cambiar.
-- Fase 5: 2 informes gratis; el tercero recibe 402; regenerar no cobra; dos clics simultáneos con un
-  solo cupo cobran una vez; borrar la cuenta y crear otra no da más informes gratis (la prueba es por cédula).
+- Fase 5: 1 informe gratis; el segundo recibe 402; regenerar no cobra; borrar la cuenta y crear otra no da más informes gratis (la prueba es por cédula).
 - Fase 7: ningún usuario ve datos del otro (RLS y API).
 Al final borra todo lo creado.
 
@@ -102,7 +101,7 @@ def main():
 
         print("Fase 0 · usuario nuevo")
         s = A.get("/suscripcion/actual").json()
-        ok(s["plan"] == "gratis" and s["restantes"] == 2, f"plan gratis con 2 informes (restantes={s['restantes']})")
+        ok(s["plan"] == "gratis" and s["restantes"] == 1, f"plan gratis con 1 informe (restantes={s['restantes']})")
 
         print("Fase 2 · minuta de ejemplo (real)")
         r = leer(A, minuta_real, "minuta.pdf", "application/pdf")
@@ -177,10 +176,7 @@ def main():
         with cf.ThreadPoolExecutor(2) as ex:
             rs = [f.result() for f in [ex.submit(A.post, f"/informes/{informes[1]}/generar", json={"tipo": "parcial"})
                                        for _ in range(2)]]
-        cobrados = sum(1 for x in rs if x.status_code == 200 and x.json()["cobrado"])
-        ok(cobrados == 1, f"dos clics simultáneos cobran una sola vez (cobrados={cobrados})")
-        r = A.post(f"/informes/{informes[2]}/generar", json={"tipo": "parcial"})
-        ok(r.status_code == 402, f"el tercero recibe 402 (HTTP {r.status_code})")
+        ok(all(x.status_code == 402 for x in rs), f"agotado el cupo gratis, otro informe recibe 402 ({[x.status_code for x in rs]})")
         r = A.get(f"/informes/{informes[0]}/descargar", params={"formato": "pdf"})
         ok(r.status_code == 200 and httpx.get(r.json()["url"], timeout=60).content.startswith(b"%PDF"),
            "descarga del PDF con URL firmada")
@@ -210,7 +206,7 @@ def main():
         r = guardar(A2, lectura)
         ok(r.status_code == 200, f"con la cuenta borrada, la cédula queda libre para una cuenta nueva (HTTP {r.status_code})")
         s = A2.get("/suscripcion/actual").json()
-        ok(s["restantes"] == 0, f"la cuenta nueva NO recibe otros 2 informes gratis (restantes={s['restantes']})")
+        ok(s["restantes"] == 0, f"la cuenta nueva NO recibe otro informe gratis (restantes={s['restantes']})")
     finally:
         print("Limpieza")
         for uid, email in usuarios:

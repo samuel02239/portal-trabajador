@@ -98,8 +98,8 @@ def main():
         print("Cuenta normal (debe seguir limitada)")
         normal = login(email_normal, clave)
         informes = preparar(normal, cedulas[1])
-        codigos = [normal.post(f"/informes/{inf}/generar", json={"tipo": "parcial"}).status_code for inf in informes[:3]]
-        ok(codigos == [200, 200, 402], f"gratis: 2 informes y el tercero 402 -> {codigos}")
+        codigos = [normal.post(f"/informes/{inf}/generar", json={"tipo": "parcial"}).status_code for inf in informes[:2]]
+        ok(codigos == [200, 402], f"gratis: 1 informe y el segundo 402 -> {codigos}")
     finally:
         print("Limpieza")
         for uid, email in creados:

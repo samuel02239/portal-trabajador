@@ -1,6 +1,6 @@
 # Backend del Portal del Trabajador para la nube (Render u otro servicio con Docker). Ver DESPLIEGUE.md.
 #
-# - LibreOffice convierte el informe a PDF.
+# - LibreOffice convierte el informe (y las evidencias Word/Excel, para sacarles capturas) a PDF.
 # - Fuentes con las mismas medidas que las de la plantilla: Liberation Sans = Arial, Liberation Sans Narrow =
 #   Arial Narrow (solo viene en Debian 12 "bookworm", por eso la imagen queda fija), Carlito = Calibri,
 #   Liberation Mono = Courier New.
@@ -15,7 +15,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-      libreoffice-writer-nogui fonts-liberation fonts-crosextra-carlito fonts-dejavu-core fontconfig \
+      libreoffice-writer-nogui libreoffice-calc-nogui fonts-liberation fonts-crosextra-carlito fonts-dejavu-core fontconfig \
  && rm -rf /var/lib/apt/lists/* \
  && fc-cache -f \
  && (soffice --version || echo "AVISO: soffice no respondió; /api/health dirá si hay PDF") \

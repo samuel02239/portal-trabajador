@@ -99,9 +99,21 @@ class VentanaGenerar(PaginaDesplazable):
 
         self.e.suscripcion_cambiada.connect(lambda: self.medidor.poner(self.e.suscripcion))
         self._viejo = True
-        self.e.actividades_cambiadas.connect(lambda: setattr(self, "_viejo", True))
-        self.e.contrato_cambiado.connect(lambda: setattr(self, "_viejo", True))
+        # Tras cambiar actividades o evidencias, el informe ya generado quedó desactualizado: la vista previa y
+        # la descarga solo se ofrecen para informes generados después del último cambio.
+        self._hubo_cambios = False
+        self._frescos: set[str] = set()
+        self.e.actividades_cambiadas.connect(self._marcar_cambio)
+        self.e.contrato_cambiado.connect(self._marcar_cambio)
         self.e.periodo_cambiado.connect(lambda _: setattr(self, "_viejo", True))
+
+    def _marcar_cambio(self) -> None:
+        self._viejo = True
+        self._hubo_cambios = True
+        self._frescos.clear()
+
+    def _al_dia(self, inf: dict) -> bool:
+        return bool(inf.get("pdf_path")) and (not self._hubo_cambios or inf.get("id") in self._frescos)
 
     # ------------------------------------------------------------------
     def al_mostrar(self, **_) -> None:
@@ -119,8 +131,9 @@ class VentanaGenerar(PaginaDesplazable):
 
     def _botones_descarga(self, d: dict | None) -> None:
         inf = (d or {}).get("informe") or {}
-        self.b_word.setEnabled(bool(inf.get("docx_path")))
-        self.b_pdf.setEnabled(bool(inf.get("pdf_path")))
+        al_dia = d is not None and self._al_dia(inf)
+        self.b_word.setEnabled(al_dia and bool(inf.get("docx_path")))
+        self.b_pdf.setEnabled(al_dia)
 
     def cargar(self) -> None:
         self.indicador.mostrar("Revisando tu informe…")
@@ -164,7 +177,11 @@ class VentanaGenerar(PaginaDesplazable):
         inf = d["informe"]
         self.final.setChecked(inf.get("tipo") == "final")
         self._botones_descarga(d)
-        if inf.get("pdf_path"):
+        if inf.get("pdf_path") and not self._al_dia(inf):
+            self.visor.hide()
+            self.estado_previa.setText("Cambiaste actividades o evidencias desde que generaste este informe. "
+                                       "Pulsa «Generar informe» para ver cómo queda y poder descargarlo.")
+        elif inf.get("pdf_path"):
             self.estado_previa.setText("Este informe ya fue generado. Esta es la última versión.")
             self._cargar_previa(inf["id"])
         else:
@@ -186,6 +203,9 @@ class VentanaGenerar(PaginaDesplazable):
         self.aviso.ocultar()
         self._limpiar(self.advertencias)
         self.b_generar.setEnabled(False)
+        self.visor.hide()  # la versión anterior ya no vale: se mostrará la nueva al terminar
+        self._botones_descarga(None)
+        self.estado_previa.setText("Generando la vista previa con tus últimos cambios…")
         self.indicador.mostrar("Generando tu informe… (puede tardar unos segundos)")
         ejecutar(self.e.api.generar_informe, self.datos["informe"]["id"],
                  "final" if self.final.isChecked() else "parcial", self.fecha.iso(),
@@ -195,6 +215,7 @@ class VentanaGenerar(PaginaDesplazable):
     def _generado(self, r: dict) -> None:
         self.e.poner_suscripcion(r.get("suscripcion"))
         self.datos["informe"] = r["informe"]
+        self._frescos.add(r["informe"]["id"])
         self._botones_descarga(self.datos)
         if r.get("sin_limite"):
             detalle = " Cuenta de pruebas: no se descuenta cupo."
@@ -211,8 +232,11 @@ class VentanaGenerar(PaginaDesplazable):
             self._cargar_previa(r["informe"]["id"])
         self.e.actividades_cambiadas.emit()
         self._viejo = False
+        self._frescos = {r["informe"]["id"]}  # el emit de arriba lo vació; este informe sí está al día
 
     def _error_generar(self, err) -> None:
+        self.estado_previa.setText("No se pudo generar el informe.")
+        self._botones_descarga(self.datos)
         if getattr(err, "codigo", "") == "limite_alcanzado":
             self.ventana.recargar_suscripcion()
             self.ventana.ir("planes", mensaje=str(err))

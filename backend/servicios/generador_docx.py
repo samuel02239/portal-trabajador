@@ -43,6 +43,8 @@ class ImagenAnexo:
     numero: int
     descripcion: str
     contenido: bytes
+    etiqueta: str = ""        # por ejemplo "página 2 de 5" cuando es la captura de un documento
+    origen: str = "foto"      # 'foto' o 'documento' (captura de página: siempre hoja completa)
 
 
 @dataclass
@@ -64,6 +66,7 @@ class DatosInforme:
     obligaciones: list[ObligacionInforme] = field(default_factory=list)
     anexos: list[str] = field(default_factory=list)
     imagenes: list[ImagenAnexo] = field(default_factory=list)
+    avisos: list[str] = field(default_factory=list)
 
     def valor_campo(self, campo: str) -> str:
         f = lambda d: fecha_larga(d) if d else ""  # noqa: E731
@@ -292,32 +295,53 @@ def pegar_imagenes(doc, imagenes: list[ImagenAnexo], rpr_base=None) -> int:
     for im in imagenes:
         lista = procesar.preparar(im.contenido)
         if lista:
-            preparadas.append((im, *lista))
+            jpeg, ancho_px, alto_px = lista
+            preparadas.append((im, jpeg, ancho_px, alto_px, procesar.es_grande(jpeg, ancho_px, alto_px, im.origen)))
     if not preparadas:
         return 0
     seccion = doc.sections[-1]
-    ancho_max = min(seccion.page_width - seccion.left_margin - seccion.right_margin, Cm(15))
-    alto_max = Cm(8.6)  # caben dos fotos con su título por página
+    ancho_util = seccion.page_width - seccion.left_margin - seccion.right_margin
+    alto_util = seccion.page_height - seccion.top_margin - seccion.bottom_margin
     base = rpr_base if rpr_base is not None else _rpr_arial()
     negrita, normal = _con_negrita(base), quitar_negrita(base)
+    # Hoja completa para las grandes (cabe la leyenda arriba); mitad de hoja para las pequeñas
+    ancho_grande, alto_grande = ancho_util, alto_util - Cm(2.2)
+    ancho_chica, alto_chica = min(ancho_util, Cm(15)), min(Cm(8.6), (alto_util - Cm(3)) / 2)
+
+    # Hojas: cada imagen grande ocupa una hoja; las pequeñas se juntan de dos en dos, en orden
+    hojas: list[list] = []
+    for item in preparadas:
+        if item[4]:
+            hojas.append([item])
+        elif hojas and not hojas[-1][0][4] and len(hojas[-1]) < 2:
+            hojas[-1].append(item)
+        else:
+            hojas.append([item])
 
     salto = doc.add_paragraph()
     salto.add_run().add_break(WD_BREAK.PAGE)
     titulo = doc.add_paragraph()
     titulo.paragraph_format.space_after = Pt(6)
+    titulo.paragraph_format.keep_with_next = True
     _escribir(titulo, "REGISTRO FOTOGRÁFICO DE LOS ANEXOS", negrita)
-    for im, jpeg, ancho_px, alto_px in preparadas:
-        escala = min(ancho_max / ancho_px, alto_max / alto_px)
-        leyenda = doc.add_paragraph()
-        leyenda.paragraph_format.keep_with_next = True
-        leyenda.paragraph_format.space_before = Pt(10)
-        leyenda.paragraph_format.space_after = Pt(4)
-        _escribir(leyenda, f"Anexo {im.numero}. ", negrita)
-        _escribir(leyenda, f"{im.descripcion.rstrip('.')}.", normal)
-        foto = doc.add_paragraph()
-        foto.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        foto.add_run().add_picture(io.BytesIO(jpeg), width=Emu(int(ancho_px * escala)),
-                                   height=Emu(int(alto_px * escala)))
+    for n_hoja, hoja in enumerate(hojas):
+        for n, (im, jpeg, ancho_px, alto_px, grande) in enumerate(hoja):
+            ancho_max, alto_max = (ancho_grande, alto_grande) if grande else (ancho_chica, alto_chica)
+            if grande and n_hoja == 0:
+                alto_max -= Cm(1.2)  # comparte hoja con el título
+            escala = min(ancho_max / ancho_px, alto_max / alto_px)
+            leyenda = doc.add_paragraph()
+            leyenda.paragraph_format.keep_with_next = True
+            leyenda.paragraph_format.space_before = Pt(10)
+            leyenda.paragraph_format.space_after = Pt(4)
+            if n == 0 and n_hoja > 0:
+                leyenda.paragraph_format.page_break_before = True
+            _escribir(leyenda, f"Anexo {im.numero}" + (f" ({im.etiqueta})" if im.etiqueta else "") + ". ", negrita)
+            _escribir(leyenda, f"{im.descripcion.rstrip('.')}.", normal)
+            foto = doc.add_paragraph()
+            foto.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            foto.add_run().add_picture(io.BytesIO(jpeg), width=Emu(int(ancho_px * escala)),
+                                       height=Emu(int(alto_px * escala)))
     return len(preparadas)
 
 

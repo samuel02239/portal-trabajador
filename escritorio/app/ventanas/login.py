@@ -117,7 +117,7 @@ class VentanaLogin(PaginaDividida):
     def _cambiar_modo(self, modo: int) -> None:
         crear = modo == 1
         self.titulo.setText("Crea tu cuenta" if crear else "Te damos la bienvenida")
-        self.subtitulo.setText("Empiezas con 2 informes gratis." if crear
+        self.subtitulo.setText("Empiezas con 1 informe gratis." if crear
                                else "Inicia sesión para continuar con tu informe.")
         self.nombre.setVisible(crear)
         self.contenedor_datos.setVisible(crear)

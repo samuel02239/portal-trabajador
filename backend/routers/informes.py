@@ -13,7 +13,7 @@ from db import get_db
 from errores import ErrorApi
 from routers import comun
 from schemas import GenerarEntrada
-from servicios import alertas, conversor_pdf, cuentas, cupo, limites, periodos, verificacion
+from servicios import alertas, capturas, conversor_pdf, cuentas, cupo, limites, periodos, verificacion
 from servicios import evidencias as evidencias_srv
 from servicios.extractor import TIPOS_MIME, nombre_seguro
 from servicios.generador_docx import DatosInforme, ErrorPlantilla, ImagenAnexo, ObligacionInforme, generar
@@ -109,7 +109,7 @@ def texto_con_anexos(texto: str, refs: list[tuple[int, str]]) -> str:
 def _datos_informe(contrato: dict, perfil: dict, informe: dict, grupos: list[dict], tipo: str,
                    fecha_elaboracion: date, descargar=None) -> DatosInforme:
     """descargar(ruta) -> bytes: trae la imagen de Storage para pegarla al final del informe."""
-    obligaciones, anexos, imagenes = [], [], []
+    obligaciones, anexos, imagenes, datos_avisos = [], [], [], []
     for g in grupos:
         textos = []
         for a in g["actividades"]:
@@ -123,14 +123,31 @@ def _datos_informe(contrato: dict, perfil: dict, informe: dict, grupos: list[dic
                     evidencias_srv.descripcion_respaldo(texto, evidencias_srv.tipo_de(nombre))
                 numero = len(anexos) + 1
                 imagen = evidencias_srv.es_imagen(nombre)
-                anexos.append(f"{desc} (obligación {g['numero']})."
-                              + ("" if imagen else " Se entrega como archivo adjunto."))
-                refs.append((numero, desc))
-                if imagen and descargar:
+                pegado = False
+                if descargar:
                     try:
-                        imagenes.append(ImagenAnexo(numero, desc, descargar(e["path"])))
+                        contenido = descargar(e["path"])
+                        if imagen:
+                            imagenes.append(ImagenAnexo(numero, desc, contenido))
+                            pegado = True
+                        else:  # PDF, Word o Excel: se pegan capturas de sus páginas
+                            tipo = nombre.lower().rsplit(".", 1)[-1]
+                            paginas, total = capturas.paginas(contenido, tipo)
+                            for i, jpeg in enumerate(paginas, 1):
+                                imagenes.append(ImagenAnexo(numero, desc, jpeg, origen="documento",
+                                                            etiqueta=f"página {i} de {total}" if total > 1 else ""))
+                            pegado = bool(paginas)
+                            if total > len(paginas):
+                                datos_avisos.append(f"Anexo {numero}: el documento tiene {total} páginas; se pegaron "
+                                                    f"las primeras {len(paginas)}.")
+                            if not paginas:
+                                datos_avisos.append(f"Anexo {numero}: no se pudo tomar captura de «{nombre}»; "
+                                                    "queda como archivo adjunto.")
                     except Exception:
                         log.warning("No se pudo descargar la evidencia %s", e["id"])
+                anexos.append(f"{desc} (obligación {g['numero']})."
+                              + ("" if pegado else " Se entrega como archivo adjunto."))
+                refs.append((numero, desc))
             textos.append(texto_con_anexos(texto, refs))
         obligaciones.append(ObligacionInforme(numero=g["numero"], texto=g["texto"], actividades=textos))
     f = periodos.a_fecha
@@ -143,7 +160,7 @@ def _datos_informe(contrato: dict, perfil: dict, informe: dict, grupos: list[dic
         supervisor_cargo=contrato.get("supervisor_cargo") or "",
         periodo_inicio=f(informe["periodo_inicio"]), periodo_fin=f(informe["periodo_fin"]),
         fecha_elaboracion=fecha_elaboracion, tipo=tipo, obligaciones=obligaciones, anexos=anexos,
-        imagenes=imagenes)
+        imagenes=imagenes, avisos=datos_avisos)
 
 
 @router.post("/informes/{informe_id}/generar")
@@ -179,7 +196,7 @@ def generar_informe(informe_id: str, body: GenerarEntrada, u: Usuario = Depends(
                             descargar=lambda ruta: db.descargar("evidencias", ruta))
         docx = generar(plantilla_docx, plantilla["mapa_campos"], di)
         pdf = conversor_pdf.convertir(docx)
-        advertencias = verificacion.verificar(plantilla_docx, docx, plantilla_pdf, pdf)
+        advertencias = di.avisos + verificacion.verificar(plantilla_docx, docx, plantilla_pdf, pdf)
         if pdf is None:
             advertencias.append("No se pudo crear el PDF en el servidor; descarga el Word.")
         ruta_docx = f"{u.id}/{informe_id}.docx"

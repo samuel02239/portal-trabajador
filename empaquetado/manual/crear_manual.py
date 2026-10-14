@@ -387,7 +387,7 @@ for celda, texto in zip(planes.rows[0].cells, ("Plan", "Precio", "Qué incluye")
     sombra.set(qn("w:val"), "clear")
     sombra.set(qn("w:fill"), "0E5A6B")
     celda._tc.get_or_add_tcPr().append(sombra)
-for fila in (("Gratis (prueba)", "$0", "2 informes en total. Una sola vez por cédula."),
+for fila in (("Gratis (prueba)", "$0", "1 informe en total. Una sola vez por cédula."),
              ("Normal", "$15.000 por 30 días", "2 informes en el periodo de 30 días."),
              ("Pro", "$50.000 por 30 días", "Informes ilimitados durante 30 días.")):
     for celda, texto in zip(planes.add_row().cells, fila):

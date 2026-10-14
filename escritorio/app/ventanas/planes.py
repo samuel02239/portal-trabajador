@@ -20,7 +20,7 @@ from app.widgets.tarjeta import PaginaDesplazable, Tarjeta
 INTERVALO_MS = 3000
 ESPERA_MAXIMA_S = 10 * 60
 CARACTERISTICAS = {
-    "gratis": ["2 informes en total", "Prueba única al crear tu cuenta", "No vence"],
+    "gratis": ["1 informe en total", "Prueba única al crear tu cuenta", "No vence"],
     "normal": ["2 informes al mes", "Vigencia de 30 días desde el pago", "Regenerar un informe no gasta cupo"],
     "pro": ["Informes ilimitados", "Vigencia de 30 días desde el pago", "Regenerar un informe no gasta cupo"],
 }

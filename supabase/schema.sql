@@ -189,7 +189,7 @@ create table if not exists public.planes (
 );
 
 insert into public.planes (id, nombre, precio_cop, informes_limite, periodo_limite, dias_vigencia) values
-  ('gratis', 'Gratis (prueba)', 0,     2,    'total',   null),
+  ('gratis', 'Gratis (prueba)', 0,     1,    'total',   null),
   ('normal', 'Normal',          15000, 2,    'mensual', 30),
   ('pro',    'Pro',             50000, null, 'mensual', 30)
 on conflict (id) do update set
@@ -313,7 +313,7 @@ revoke all on function public.vincular_cedula(uuid, text) from public, anon, aut
 grant execute on function public.vincular_cedula(uuid, text) to service_role;
 
 -- La prueba gratis es de la persona (cédula), no de la cuenta: borrar la cuenta y crear
--- otra no da 2 informes más. Se guarda solo un hash de la cédula (no la cédula).
+-- otra no da otro informe más. Se guarda solo un hash de la cédula (no la cédula).
 create table if not exists public.pruebas_gratis (
   cedula_hash text primary key,
   usados int not null default 0,
