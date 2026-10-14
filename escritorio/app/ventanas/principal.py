@@ -398,7 +398,7 @@ class VentanaPrincipal(QMainWindow):
         if self.pila.currentWidget() is not self.pag_cargando:
             return
         if isinstance(err, ErrorApp) and err.codigo in ("sin_backend", "sin_conexion", "version_antigua",
-                                                         "tiempo_agotado"):
+                                                         "tiempo_agotado", "servidor_no_disponible"):
             self.mostrar_login(str(err), "error")
         else:
             self.mostrar_login()

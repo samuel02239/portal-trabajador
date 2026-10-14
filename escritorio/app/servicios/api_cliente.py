@@ -6,7 +6,7 @@ from pathlib import Path
 
 import httpx
 
-from app.servicios.errores import SIN_CONEXION, ErrorApp, mensaje_sin_conexion
+from app.servicios.errores import SERVIDOR_NO_DISPONIBLE, SIN_CONEXION, ErrorApp, mensaje_sin_conexion
 
 
 class ClienteApi:
@@ -41,6 +41,8 @@ class ClienteApi:
                 err = r.json().get("error") or {}
             except ValueError:
                 err = {}
+            if not err and r.status_code in (502, 503, 504):  # página de error del proveedor, no del backend
+                raise ErrorApp(SERVIDOR_NO_DISPONIBLE, "servidor_no_disponible", r.status_code)
             datos = {k: v for k, v in err.items() if k not in ("codigo", "mensaje")}
             raise ErrorApp(err.get("mensaje") or f"El servidor respondió con un error ({r.status_code}).",
                            err.get("codigo") or "error_http", r.status_code, datos)

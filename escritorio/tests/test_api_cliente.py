@@ -35,6 +35,17 @@ def test_401_renueva_token_y_repite(gestor):
 
 
 @respx.mock
+@pytest.mark.parametrize("status", [502, 503, 504])
+def test_servidor_caido_da_mensaje_claro(gestor, status):
+    """Render responde con su propia página HTML cuando el servicio no está disponible."""
+    respx.get(f"{BASE}/api/health").mock(return_value=httpx.Response(status, html="<title>502</title>Bad Gateway"))
+    with pytest.raises(ErrorApp) as e:
+        ClienteApi(BASE, gestor).health()
+    assert e.value.codigo == "servidor_no_disponible" and e.value.status == status
+    assert "no está disponible" in str(e.value)
+
+
+@respx.mock
 def test_sin_conexion(gestor):
     respx.get(f"{BASE}/api/suscripcion/actual").mock(side_effect=httpx.ConnectError("caído"))
     with pytest.raises(ErrorApp) as e:

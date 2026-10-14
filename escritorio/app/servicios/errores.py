@@ -17,6 +17,8 @@ class ErrorApp(Exception):
 
 SIN_CONEXION = ("No pudimos conectarnos con el servidor. Revisa tu conexión a internet "
                 "(o que el backend esté encendido) e intenta de nuevo.")
+SERVIDOR_NO_DISPONIBLE = ("El servidor no está disponible en este momento. Tus datos están a salvo; intenta de nuevo "
+                          "en unos minutos y, si sigue igual, avisa a quien te compartió el programa.")
 SIN_BACKEND_LOCAL = ("El servidor local (backend) está apagado. Ábrelo con «iniciar_todo.bat» o "
                      "«backend\\iniciar_backend.bat», deja esa ventana abierta e intenta de nuevo.")
 
