@@ -25,7 +25,7 @@ services:
       - key: OPENROUTER_API_KEYS
         sync: false
       - key: WOMPI_ENV
-        value: sandbox        # cámbialo a production cuando pongas las llaves de producción
+        sync: false           # se cambia en el panel de Render: sandbox (pruebas) o production (cobros reales)
       - key: VERSION_MINIMA_ESCRITORIO
         value: "1.1.0"
       - key: WEB_CONCURRENCY
