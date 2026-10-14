@@ -20,3 +20,6 @@ backend/scripts/ultimo_informe_prueba.pdf
 # Documentos reales (minutas, informes) con datos personales
 *.pdf
 !backend/plantillas_base/*.pdf
+# Notas personales (los requirements sí se suben)
+*.txt
+!requirements*.txt
