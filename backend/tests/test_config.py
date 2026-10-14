@@ -32,6 +32,15 @@ def test_llaves_de_prueba_con_entorno_de_produccion():
     assert not any(v in a for a in avisos for v in WOMPI_PRUEBAS.values())  # nunca muestra el valor de la llave
 
 
+def test_no_cobra_si_las_llaves_son_de_otro_ambiente():
+    assert _cfg(**WOMPI_PRUEBAS).wompi_configurado
+    produccion = dict(wompi_public_key="pub_prod_a", wompi_private_key="prv_prod_b",
+                      wompi_events_secret="prod_events_c", wompi_integrity_secret="prod_integrity_d")
+    assert not _cfg(**produccion).wompi_configurado                       # llaves reales con WOMPI_ENV=sandbox
+    assert _cfg(wompi_env="production", **produccion).wompi_configurado
+    assert not _cfg(wompi_env="production", **WOMPI_PRUEBAS).wompi_configurado
+
+
 def test_falta_una_llave_de_wompi():
     assert config.revisar(_cfg(wompi_public_key="pub_test_a")) == [
         "Falta WOMPI_PRIVATE_KEY.", "Falta WOMPI_EVENTS_SECRET.", "Falta WOMPI_INTEGRITY_SECRET."]

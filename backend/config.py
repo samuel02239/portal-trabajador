@@ -56,7 +56,13 @@ class Config:
 
     @property
     def wompi_configurado(self) -> bool:
-        return bool(self.wompi_public_key and self.wompi_integrity_secret)
+        """Llaves completas y del mismo ambiente que WOMPI_ENV. Con llaves de producción y WOMPI_ENV=sandbox se
+        cobraría dinero real y el pago se buscaría en pruebas (el plan nunca se activaría): mejor no cobrar."""
+        if not (self.wompi_public_key and self.wompi_integrity_secret):
+            return False
+        prueba = self.wompi_env == "sandbox"
+        return (self.wompi_public_key.startswith("pub_test_" if prueba else "pub_prod_")
+                and self.wompi_integrity_secret.startswith("test_integrity_" if prueba else "prod_integrity_"))
 
 
 _ENTORNOS_WOMPI = {"sandbox": "sandbox", "pruebas": "sandbox", "test": "sandbox",
