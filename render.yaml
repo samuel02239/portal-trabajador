@@ -21,21 +21,12 @@ services:
         sync: false
       - key: OPENROUTER_API_KEYS
         sync: false
-      - key: WOMPI_PUBLIC_KEY
-        sync: false
-      - key: WOMPI_PRIVATE_KEY
-        sync: false
-      - key: WOMPI_EVENTS_SECRET
-        sync: false
-      - key: WOMPI_INTEGRITY_SECRET
-        sync: false
       - key: WOMPI_ENV
         value: sandbox        # cámbialo a production cuando pongas las llaves de producción
-      - key: WOMPI_REDIRECT_URL
-        sync: false
       - key: VERSION_MINIMA_ESCRITORIO
         value: "1.1.0"
-      - key: URL_DESCARGA_ESCRITORIO
-        sync: false
       - key: WEB_CONCURRENCY
         value: "1"            # procesos del servidor; con un plan de 2 GB o más puedes poner 2
+    # Cuando las tengas, agrega en Render > servicio > Environment (no aquí): WOMPI_PUBLIC_KEY,
+    # WOMPI_PRIVATE_KEY, WOMPI_EVENTS_SECRET, WOMPI_INTEGRITY_SECRET y, si quieres, URL_DESCARGA_ESCRITORIO.
+    # Sin las de Wompi el programa funciona igual; solo dice que los pagos aún no están habilitados.

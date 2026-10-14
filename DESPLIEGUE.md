@@ -34,36 +34,55 @@ Pon las nuevas también en `backend/.env` de tu PC para seguir haciendo pruebas.
 
 ## Paso 1. Subir el código a GitHub (repositorio privado)
 
-1. Instala **GitHub Desktop** (https://desktop.github.com) e inicia sesión con tu cuenta de GitHub (créala si no tienes).
-2. *File → Add local repository…* → elige la carpeta `portal-trabajador`.
-   Saldrá "This directory does not appear to be a Git repository": haz clic en **create a repository**.
-   Deja *Git ignore* en **None** (el proyecto ya trae su `.gitignore`) y pulsa **Create repository**.
-3. **Revisa la lista de archivos antes de confirmar** (pestaña *Changes*):
-   - NO debe aparecer `backend/.env` (tiene las llaves secretas). Si aparece, detente y avísame.
-   - SÍ deben aparecer `render.yaml`, `.env.example`, `backend/Dockerfile` y `escritorio/.env` (este solo tiene valores públicos).
-4. Escribe un resumen ("Primera versión") y pulsa **Commit to main**.
-5. Pulsa **Publish repository** y deja marcado **Keep this code private**.
+La carpeta `portal-trabajador` ya es un repositorio de Git (Git quedó instalado para tu usuario). `.gitignore`
+deja por fuera `backend/.env`, los instaladores y los PDF; antes del primer envío se revisó que no viaje ninguna llave.
+
+1. Entra a https://github.com/new con tu cuenta.
+2. *Repository name*: `portal-trabajador`. Marca **Private**. **No** marques README, .gitignore ni licencia.
+3. Pulsa **Create repository** y copia la dirección (`https://github.com/TU-USUARIO/portal-trabajador.git`).
+4. Envía el código (desde la carpeta `portal-trabajador`, en PowerShell):
+
+   ```powershell
+   git remote add origin https://github.com/TU-USUARIO/portal-trabajador.git
+   git push -u origin main
+   ```
+
+   La primera vez se abre una ventana de GitHub para que inicies sesión **en tu navegador** (nunca escribas la
+   contraseña en la terminal ni en un chat). Queda recordado para los siguientes envíos.
+
+**Enviar cambios después** (Render se actualiza solo con cada envío):
+
+```powershell
+git add -A
+git commit -m "Describe el cambio"
+git push
+```
 
 ---
 
 ## Paso 2. Crear el servidor en Render
 
-1. Entra a https://render.com y regístrate con tu cuenta de GitHub.
-2. *New → Blueprint* → conecta GitHub y elige el repositorio `portal-trabajador`.
-   Render lee `render.yaml` y muestra el servicio **portal-trabajador-api** (Docker, plan *Starter*, región Oregon).
-3. Render te pide el valor de cada variable. Cópialas de aquí:
+1. Entra a https://render.com → **Get Started** → **GitHub** (regístrate con tu cuenta de GitHub y autoriza a Render).
+2. En el panel: **New +** → **Blueprint**.
+3. En *Connect a repository*, si no aparece `portal-trabajador` (es privado): pulsa **Configure account** /
+   *Configure GitHub App* → *Only select repositories* → elige `portal-trabajador` → **Save**. Vuelve y pulsa
+   **Connect** junto al repositorio.
+4. *Blueprint Name*: `portal-trabajador`. Render lee `render.yaml` y muestra el servicio **portal-trabajador-api**
+   (Docker, plan *Free*, región Oregon).
+5. Render pide 4 variables. Cópialas de tu `backend/.env` (o de los paneles):
 
 | Variable | De dónde se saca |
 |---|---|
 | `SUPABASE_URL` | Supabase → *Project Settings → Data API* → Project URL (`https://yzzfplbhnyexczxnselo.supabase.co`) |
 | `SUPABASE_ANON_KEY` | Supabase → *Project Settings → API Keys* → **Publishable key** (`sb_publishable_…`) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → *Project Settings → API Keys* → **Secret key** (`sb_secret_…`, la nueva del paso 0) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → *Project Settings → API Keys* → **Secret key** (`sb_secret_…`; la nueva si hiciste el paso 0) |
 | `OPENROUTER_API_KEYS` | https://openrouter.ai/keys. **Varias separadas por coma**: `sk-or-v1-aaa…,sk-or-v1-bbb…` |
-| `WOMPI_PUBLIC_KEY`, `WOMPI_PRIVATE_KEY`, `WOMPI_EVENTS_SECRET`, `WOMPI_INTEGRITY_SECRET` | Ver paso 4. Puedes dejarlas vacías por ahora: el programa dirá que los pagos aún no están habilitados |
-| `WOMPI_REDIRECT_URL` | Déjala vacía |
-| `URL_DESCARGA_ESCRITORIO` | Enlace donde vas a publicar el instalador (OneDrive, Google Drive…). Puede quedar vacía al inicio |
 
-4. Pulsa **Apply / Deploy Blueprint**. La primera construcción tarda de 5 a 10 minutos (instala LibreOffice).
+   Las de Wompi no se piden aquí: se agregan después (paso 4). Sin ellas todo funciona y el programa dice que
+   los pagos aún no están habilitados.
+
+6. Pulsa **Deploy Blueprint** (o *Apply*). La primera construcción tarda de 5 a 15 minutos (instala LibreOffice);
+   puedes verla en el servicio → **Logs**.
 5. Cuando el servicio diga **Live**, copia su dirección (arriba, algo como `https://portal-trabajador-api.onrender.com`;
    si el nombre estaba ocupado, Render le agrega letras). Ábrela en el navegador agregando `/api/health`. Debe decir:
 
@@ -81,26 +100,32 @@ pausada: revisa su saldo en OpenRouter. En la tabla `ia_logs` de Supabase, la co
 5 caracteres de la llave que se usó en cada solicitud.
 
 **Plan y costo** (verifica el precio actual en render.com/pricing):
-- *Starter* (≈ US$7/mes, 512 MB): suficiente para empezar. No se apaga.
-- *Free*: **no sirve para usuarios reales**: se apaga tras 15 min sin uso, el primer usuario espera ~1 minuto y
-  el aviso de pago de Wompi puede perderse.
-- Con muchos usuarios a la vez (por ejemplo, fin de mes): sube a *Standard* (2 GB) y cambia `WEB_CONCURRENCY` a `2`.
+- *Free* (el de `render.yaml`, para pruebas): se apaga tras 15 min sin uso. Al abrir el programa después de un
+  rato verás "Conectando con el servidor…" hasta un minuto mientras despierta; el PDF tarda más. El aviso de
+  pago de Wompi puede perderse si llega dormido: usa el botón "Ya pagué, verificar".
+- *Starter* (≈ US$7/mes): para usuarios reales. No se apaga. Cambia `plan: free` por `plan: starter` en
+  `render.yaml` y envía el cambio (o en Render → servicio → *Settings → Instance Type*).
+- Con muchos usuarios a la vez (por ejemplo, fin de mes): *Standard* (2 GB) y `WEB_CONCURRENCY` en `2`.
 
 ---
 
 ## Paso 3. Conectar el programa al servidor y probar
 
-En `escritorio/.env` cambia estas dos líneas:
+Usa la dirección exacta del paso 2 en estas dos líneas:
 
 ```
 MODO_BACKEND=remoto
 API_BASE_URL=https://portal-trabajador-api.onrender.com
 ```
 
-(usa la dirección exacta del paso 2). Abre el programa con `iniciar_todo.bat` y prueba todo: crear cuenta,
-cargar la minuta, registrar actividades con fotos, generar el informe y descargar Word y PDF.
+- **Programa instalado** (`PortalTrabajador-Personal`): crea un archivo llamado `.env` con esas dos líneas en la
+  carpeta del programa (`%LOCALAPPDATA%\Programs\PortalTrabajador`, junto a `PortalTrabajador.exe`). Al abrirlo usa
+  el servidor. Para volver al servidor interno, borra ese `.env`.
+- **Desde el código** (`iniciar_todo.bat`): cambia esas dos líneas en `escritorio/.env`. Para volver, pon
+  `MODO_BACKEND=integrado` y `API_BASE_URL=http://127.0.0.1:8000`.
 
-Para volver a probar en tu PC sin servidor, regresa a `MODO_BACKEND=integrado` y `API_BASE_URL=http://127.0.0.1:8000`.
+Prueba todo: iniciar sesión, cargar la minuta, registrar actividades con fotos, generar el informe y descargar
+Word y PDF. Los datos son los mismos en los dos modos (es la misma base de datos de Supabase).
 
 ---
 
@@ -119,7 +144,8 @@ Para volver a probar en tu PC sin servidor, regresa a `MODO_BACKEND=integrado` y
 
 4. En la misma sección, en **URL de eventos**, escribe: `https://portal-trabajador-api.onrender.com/api/pagos/webhook`
    (con tu dirección del paso 2) y guarda.
-5. En Render: servicio → **Environment** → *Edit* → pega los 4 valores → **Save, rebuild and deploy**.
+5. En Render: servicio → **Environment** → **Add Environment Variable** → agrega las 4 (nombre y valor) →
+   **Save, rebuild and deploy**.
    Escríbelos solo ahí (y en `backend/.env` si quieres probar pagos en tu PC). No los mandes por chat ni correo.
 6. `/api/health` debe decir `"pagos": true, "pagos_entorno": "sandbox"` y `avisos_configuracion` vacío.
 
